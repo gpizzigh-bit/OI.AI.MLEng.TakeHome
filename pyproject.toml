@@ -1,0 +1,31 @@
+[project]
+name = "oi-ai-mleng-takehome"
+version = "0.0.1"
+description = "This repository contains a scalable, end-to-end image classification service designed to recognize marine animals using a pre-trained ImageNet model (ResNet). The service is tailored for marine biologists, conservationists, and environmental assessment professionals to quickly identify marine species from images."
+authors = [
+    {name = "Gabriel Salvador"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi (>=0.115.12,<0.116.0)",
+    "uvicorn (>=0.34.3,<0.35.0)",
+    "pydantic (>=2.11.5,<3.0.0)",
+    "pytest (>=8.4.0,<9.0.0)",
+    "ruff (>=0.11.12,<0.12.0)",
+    "structlog (>=25.4.0,<26.0.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "tensorflow (>=2.19.0,<3.0.0)",
+    "pillow (>=11.2.1,<12.0.0)",
+    "pytest-asyncio (>=1.0.0,<2.0.0)",
+    "locust (>=2.37.7,<3.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
