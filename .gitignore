@@ -1,0 +1,67 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+
+# Caches and test artifacts
+.pytest_cache/
+.ruff_cache/
+*.cover
+*.coverage
+coverage.xml
+htmlcov/
+.cache/
+*.log
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.vscode/
+.idea/
+*.swp
+
+# Poetry
+poetry.lock
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# macOS
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+
+# VSCode
+.vscode/
+
+# System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Test images and outputs
+tests/images/
+tests/__pycache__/
+
+# Ignore environment variables and secrets
+.env
+.env.*
+
+# Ignore build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Ignore node modules (if any JS tooling is added)
+node_modules/
+
+# Ignore docs build artifacts
+docs/_build/
+
+# Ignore Kubernetes local configs
+kubernetes/*.local.yaml
