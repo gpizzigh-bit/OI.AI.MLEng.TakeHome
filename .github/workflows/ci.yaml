@@ -29,6 +29,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-poetry-
 
+    - name: Cache Poetry installer
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pypoetry/installer
+        key: ${{ runner.os }}-poetry-installer-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-installer-
+
     - name: Install Poetry
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
@@ -54,7 +62,12 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        poetry run pytest --junitxml=tests/reports/pytest-report.xml --cov=app --cov-report=xml:tests/reports/coverage.xml --cov-report=term
+        poetry run pytest \
+          --junitxml=tests/reports/pytest-report.xml \
+          --cov=app \
+          --cov-report=xml:tests/reports/coverage.xml \
+          --cov-report=html:tests/reports/htmlcov \
+          --cov-report=term
 
     - name: Upload pytest report artifact
       uses: actions/upload-artifact@v4
@@ -62,8 +75,8 @@ jobs:
         name: pytest-report
         path: tests/reports/pytest-report.xml
 
-    - name: Upload coverage report artifact
+    - name: Upload coverage report artifact (HTML)
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-report
-        path: tests/reports/coverage.xml
+        name: coverage-html-report
+        path: tests/reports/htmlcov/
