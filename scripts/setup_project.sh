@@ -13,6 +13,8 @@ mkdir -p tests
 mkdir -p docker      # Dockerfiles and Compose configurations
 mkdir -p kubernetes  # Kubernetes manifests
 mkdir -p docs       # Documentation
+mkdir -p .github/workflows # GitHub Actions workflows
+
 
 # Create essential Python files
 touch app/__init__.py
