@@ -37,4 +37,7 @@ build-backend = "poetry.core.masonry.api"
 package-mode = false
 
 [tool.pytest.ini_options]
-addopts = "--cov=app --cov-report=term --cov-report=xml"
+addopts = "--cov=app --cov-report=term --cov-report=xml:tests/reports/coverage.xml --junitxml=tests/reports/pytest-report.xml"
+testpaths = [
+    "tests"
+]
