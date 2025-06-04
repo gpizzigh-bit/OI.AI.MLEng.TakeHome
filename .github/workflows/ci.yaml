@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'  # Match your dev environment
+        python-version: '3.12'
 
     - name: Cache Poetry virtualenv
       uses: actions/cache@v4
@@ -50,6 +50,18 @@ jobs:
       run: |
         poetry run isort --check .
 
-    - name: Run tests with Pytest
+    - name: Run tests with coverage and generate reports
       run: |
-        poetry run pytest
+        poetry run pytest --junitxml=pytest-report.xml --cov=app --cov-report=xml --cov-report=term
+
+    - name: Upload pytest report artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pytest-report
+        path: pytest-report.xml
+
+    - name: Upload coverage report artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.xml
