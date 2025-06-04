@@ -1,9 +1,10 @@
+import io
+
+import numpy as np
 import structlog
 import tensorflow as tf
-import numpy as np
 from PIL import Image
-import io
-from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
+from tensorflow.keras.applications.resnet50 import decode_predictions, preprocess_input
 
 # Initialize the logger
 logger = structlog.get_logger()
@@ -13,6 +14,7 @@ model = tf.keras.applications.ResNet50(weights="imagenet")
 
 # Define target image size for ResNet50
 TARGET_SIZE = (224, 224)
+
 
 def classify_image(image_data: bytes) -> dict:
     """
@@ -25,7 +27,9 @@ def classify_image(image_data: bytes) -> dict:
     Returns:
         dict: A dictionary containing the top-5 predicted classes and their probabilities.
     """
-    logger.info("classify_image called with image data of length", length=len(image_data))
+    logger.info(
+        "classify_image called with image data of length", length=len(image_data)
+    )
 
     # Preprocess the image
     image = Image.open(io.BytesIO(image_data)).convert("RGB")
@@ -42,11 +46,14 @@ def classify_image(image_data: bytes) -> dict:
 
     # Structure results
     results = [
-        {"class_id": class_id, "class_name": class_name, "confidence": float(confidence)}
+        {
+            "class_id": class_id,
+            "class_name": class_name,
+            "confidence": float(confidence),
+        }
         for (class_id, class_name, confidence) in decoded
     ]
 
     logger.info("classification result", results=results)
 
     return {"predictions": results}
-

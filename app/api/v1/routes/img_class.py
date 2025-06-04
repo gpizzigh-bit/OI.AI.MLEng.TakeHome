@@ -1,9 +1,11 @@
 # app/routes.py
 
 from typing import List
-from fastapi import APIRouter, UploadFile, File, HTTPException, status
-from app.models import resnet
+
 import structlog
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
+
+from app.models import resnet
 
 router = APIRouter()
 logger = structlog.get_logger()
@@ -14,16 +16,17 @@ ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/jpg"}
 def return_the_higest_confidence(predictions: List) -> dict | None:
     """
     Find the prediction with the highest confidence.
-    
+
     Args:
         predictions (list): List of prediction dictionaries.
-        
+
     Returns:
         dict: The prediction with the highest confidence.
     """
     if not predictions:
         return None
-    return max(predictions, key=lambda x: x['confidence'])
+    return max(predictions, key=lambda x: x["confidence"])
+
 
 @router.post("/predict")
 async def predict(file: UploadFile = File(...)) -> dict:
@@ -55,7 +58,7 @@ async def predict(file: UploadFile = File(...)) -> dict:
             logger.warning("Unsupported file type", content_type=file.content_type)
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                detail=f"Unsupported file type: {file.content_type}. Allowed types: {', '.join(ALLOWED_CONTENT_TYPES)}"
+                detail=f"Unsupported file type: {file.content_type}. Allowed types: {', '.join(ALLOWED_CONTENT_TYPES)}",
             )
 
         image_data = await file.read()
@@ -64,10 +67,12 @@ async def predict(file: UploadFile = File(...)) -> dict:
             logger.warning("Uploaded file is empty")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Uploaded file is empty."
+                detail="Uploaded file is empty.",
             )
 
-        result = return_the_higest_confidence(resnet.classify_image(image_data)['predictions'])
+        result = return_the_higest_confidence(
+            resnet.classify_image(image_data)["predictions"]
+        )
         logger.info("Image classified successfully", result=result)
         return {"result": result}
 
@@ -78,5 +83,5 @@ async def predict(file: UploadFile = File(...)) -> dict:
         logger.exception("Unexpected error during prediction: error", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred during prediction."
+            detail="An unexpected error occurred during prediction.",
         )
