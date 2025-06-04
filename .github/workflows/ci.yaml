@@ -1,0 +1,45 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'  # Match your dev environment
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> $GITHUB_ENV
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Lint with Ruff
+      run: |
+        poetry run ruff check .
+
+    - name: Check formatting with Black
+      run: |
+        poetry run black --check .
+
+    - name: Sort imports with isort
+      run: |
+        poetry run isort --check .
+
+    - name: Run tests with Pytest
+      run: |
+        poetry run pytest
