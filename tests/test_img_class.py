@@ -4,7 +4,7 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import ASGITransport, AsyncClient
 
-from app.api.v1.routes.img_class import return_the_higest_confidence, router
+from app.api.v1.routes.img_class import return_the_highest_confidence, router
 
 # Setup FastAPI app for testing
 
@@ -19,19 +19,19 @@ async def test_return_the_higest_confidence_normal():
         {"class_id": "2", "class_name": "dog", "confidence": 0.9},
         {"class_id": "3", "class_name": "bird", "confidence": 0.2},
     ]
-    result = return_the_higest_confidence(predictions)
+    result = return_the_highest_confidence(predictions)
     assert result["class_id"] == "2"
     assert result["confidence"] == 0.9
 
 
 @pytest.mark.asyncio
 async def test_return_the_higest_confidence_empty():
-    assert return_the_higest_confidence([]) is None
+    assert return_the_highest_confidence([]) is None
 
 
 @pytest.mark.asyncio
 async def test_return_the_higest_confidence_none():
-    assert return_the_higest_confidence(None) is None
+    assert return_the_highest_confidence(None) is None
 
 
 app = FastAPI()

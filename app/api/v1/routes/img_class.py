@@ -6,6 +6,7 @@ import structlog
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.models import resnet
+from app.models.multimodel import ModelManager
 
 router = APIRouter()
 logger = structlog.get_logger()
@@ -13,7 +14,7 @@ logger = structlog.get_logger()
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/jpg"}
 
 
-def return_the_higest_confidence(predictions: List) -> dict | None:
+def return_the_highest_confidence(predictions: List) -> dict | None:
     """
     Find the prediction with the highest confidence.
 
@@ -70,7 +71,7 @@ async def predict(file: UploadFile = File(...)) -> dict:
                 detail="Uploaded file is empty.",
             )
 
-        result = return_the_higest_confidence(
+        result = return_the_highest_confidence(
             resnet.classify_image(image_data)["predictions"]
         )
         logger.info("Image classified successfully", result=result)
@@ -81,6 +82,67 @@ async def predict(file: UploadFile = File(...)) -> dict:
         raise http_exc
     except Exception as e:
         logger.exception("Unexpected error during prediction: error", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred during prediction.",
+        )
+
+
+@router.post("/smart_predict")
+async def smart_predict(file: UploadFile = File(...)) -> dict:
+    """
+    Endpoint to classify an uploaded image using the ModelManager's classify_image method.
+    This endpoint accepts an image file (JPEG or PNG), processes it using the ModelManager,
+    and returns the class label with the highest confidence.
+    Args:
+        file (UploadFile): The uploaded image file.
+    Returns:
+        dict: A dictionary containing the most confident prediction:
+            {
+                "result": {
+                    "class_id": str,
+                    "class_name": str,
+                    "confidence": float,
+                    "model_used": str
+                }
+    Raises:
+        HTTPException: If the file type is not supported, the file is empty, or
+        if an unexpected error occurs during prediction.
+    """
+    # For now, we just call the same predict function
+    # 1) Check content type
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        logger.warning("Unsupported file type", content_type=file.content_type)
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported file type: {file.content_type}",
+        )
+
+    # 2) Read bytes
+    image_data = await file.read()
+    if not image_data:
+        logger.warning("Uploaded file is empty")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty."
+        )
+
+    try:
+        # 3) Delegate to ModelManager.classify_image
+        out = await ModelManager.classify_image(image_data)
+        # out is {"model_used": "...", "predictions": [ {...}, ... ]}
+
+        best = return_the_highest_confidence(out["predictions"])
+        # Optionally attach which backbone was used:
+        best["model_used"] = out["model_used"]
+
+        logger.info("Image classified successfully (smart_predict)", result=best)
+        return {"result": best}
+
+    except ValueError as ve:
+        logger.error("PIL decode error or invalid image", error=str(ve))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        logger.exception("Unexpected error during smart_predict", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during prediction.",

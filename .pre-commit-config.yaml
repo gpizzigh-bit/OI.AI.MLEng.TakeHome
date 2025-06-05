@@ -3,7 +3,7 @@ repos:
     rev: v0.11.12
     hooks:
       - id: ruff
-        args: [--fix]  # Automatically fixes lint issues where possible
+        args: [--fix, --exclude=*.ipynb, --exclude=research/]  # Automatically fixes lint issues where possible
 
   - repo: https://github.com/psf/black
     rev: 25.1.0
@@ -14,6 +14,14 @@ repos:
     rev: 6.0.1
     hooks:
       - id: isort
+
+  - repo: local
+    hooks:
+      - id: compress-large-files
+        name: Compress large files
+        entry: bash scripts/compress_large_files.sh
+        language: system
+        files: ^(research/.*\.ipynb|tests/locust_reports/.*\.html)$
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
