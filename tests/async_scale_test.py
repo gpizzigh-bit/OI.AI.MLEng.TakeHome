@@ -3,6 +3,8 @@ import random
 
 from locust import HttpUser, between, task
 
+API_URL = "/api/v1/smart_predict"  # Adjust this if your API endpoint is different
+
 
 class ImageClassificationUser(HttpUser):
     host = "http://localhost:8000"  # Replace with your FastAPI host
@@ -25,7 +27,7 @@ class ImageClassificationUser(HttpUser):
 
         with open(image_path, "rb") as img:
             files = {"file": (image_file, img, "image/jpeg")}
-            response = self.client.post("/api/v1/predict", files=files)
+            response = self.client.post(API_URL, files=files)
             if response.status_code == 200:
                 result = response.json().get("result", {})
                 print(

@@ -1,16 +1,29 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 from app.api.v1.routes import img_class
 from app.config import logger
+from app.models.multimodel import ModelManager
 
 # configure logging
 logger.configure_logging()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ModelManager.load_all_models()
+    yield
+    # Cleanup models
+    ModelManager.clear()
+
 
 app = FastAPI(
     title="(Ocean Infinity) Marine Image Classifier",
     description="Classifies marine animal images using a pre-trained ImageNet model soup (BASIC-L).",
     version="0.0.1",
+    lifespan=lifespan,
 )
 
 # Include the API router
