@@ -48,7 +48,7 @@ jobs:
 
     - name: Lint with Ruff
       run: |
-        poetry run ruff check .
+        poetry run ruff check . --exclude '*.ipynb' --exclude 'research/'
 
     - name: Check formatting with Black
       run: |
