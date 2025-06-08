@@ -177,7 +177,12 @@ async def triton_predict(file: UploadFile = File(...)) -> dict:
         image_data = await file.read()
         result = await triton_multi_model.classify_image(image_data)
         logger.info("Image classified successfully using Triton", result=result)
-        return result
+        best = return_the_highest_confidence(result["predictions"])
+
+        # Optionally attach which backbone was used:
+        best["model_used"] = result["model_used"]
+
+        return {"result": best}
     except Exception as e:
         logger.exception("Unexpected error during Triton prediction", error=str(e))
         raise HTTPException(
