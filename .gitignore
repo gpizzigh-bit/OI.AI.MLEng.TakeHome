@@ -70,3 +70,7 @@ kubernetes/*.local.yaml
 # ignore large uncompressed files
 research/*.ipynb
 tests/locust_reports/*.html
+
+
+#ignore the models directory
+/app/services/triton/models

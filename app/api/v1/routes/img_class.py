@@ -7,11 +7,14 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.models import resnet
 from app.models.multimodel import ModelManager
+from app.models.tritonservice import TritonMultiModel
 
 router = APIRouter()
 logger = structlog.get_logger()
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/jpg"}
+
+triton_multi_model = TritonMultiModel("triton_cpu:8000")
 
 
 def return_the_highest_confidence(predictions: List) -> dict | None:
@@ -146,4 +149,38 @@ async def smart_predict(file: UploadFile = File(...)) -> dict:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during prediction.",
+        )
+
+
+@router.post("/triton_predict")
+async def triton_predict(file: UploadFile = File(...)) -> dict:
+    """
+    Endpoint to classify an uploaded image using the Triton service.
+    This endpoint accepts an image file (JPEG or PNG), processes it using the Triton service,
+    and returns the class label with the highest confidence.
+    Args:
+        file (UploadFile): The uploaded image file.
+    Returns:
+        dict: A dictionary containing the most confident prediction:
+            {
+                "result": {
+                    "class_id": str,
+                    "class_name": str,
+                    "confidence": float,
+                    "model_used": str
+                }
+    Raises:
+        HTTPException: If the file type is not supported, the file is empty, or
+        if an unexpected error occurs during prediction.
+    """
+    try:
+        image_data = await file.read()
+        result = await triton_multi_model.classify_image(image_data)
+        logger.info("Image classified successfully using Triton", result=result)
+        return result
+    except Exception as e:
+        logger.exception("Unexpected error during Triton prediction", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred during Triton prediction.",
         )

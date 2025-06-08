@@ -1,0 +1,33 @@
+
+name: OI.AI.MLENG.TAKEHOME
+
+services:
+  triton:
+    build:
+      context: ..
+      dockerfile: docker/triton.Dockerfile
+    container_name: triton_cpu
+    ports:
+      - "8000:8000"  # HTTP endpoint
+      - "8001:8001"  # gRPC endpoint
+      - "8002:8002"  # Metrics endpoint
+    networks:
+      - skynet
+    command: >
+      tritonserver
+      --model-repository=/models
+      --log-verbose=1
+      --model-control-mode=poll
+      --backend-config=onnxruntime,session_thread_pool_size=4
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      # Use more CPU threads for inference (adjust to number of CPU cores)
+      OMP_NUM_THREADS: "4"       # or higher if you have more cores
+      OPENBLAS_NUM_THREADS: "4"  # or higher if using OpenBLAS for ONNX
+
+networks:
+  skynet:

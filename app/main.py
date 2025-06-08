@@ -1,14 +1,18 @@
 from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 from app.api.v1.routes import img_class
-from app.config import logger
+from app.config.logger import configure_logging
 from app.models.multimodel import ModelManager
 
-# configure logging
-logger.configure_logging()
+# Configure logger specifically for this class
+configure_logging(log_folder="logs", log_file_name="main.log")
+
+# Create the logger
+logger = structlog.get_logger()
 
 
 @asynccontextmanager
@@ -39,4 +43,10 @@ async def redirect_to_redoc():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=9000,
+        reload=True,
+        reload_dirs=["app"],
+    )

@@ -4,7 +4,8 @@
   "name": "Python 3",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
   "features": {
-    "ghcr.io/devcontainers-extra/features/poetry:2": {}
+    "ghcr.io/devcontainers-extra/features/poetry:2": {},
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
   "postCreateCommand": "export PYTHONPATH=/workspaces/OI.AI.MLEng.TakeHome",
   "containerEnv": {
@@ -19,4 +20,3 @@
   },
   "forwardPorts": [8000]
 }
-
