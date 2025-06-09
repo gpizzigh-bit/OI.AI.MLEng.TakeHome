@@ -7,7 +7,8 @@ PROJECT_ROOT="../"
 cd "$PROJECT_ROOT" || exit
 
 # Create the directory structure
-mkdir -p app/{api,core,models,services,db}
+mkdir -p app/{api,core,models}
+mkdir -p services # Microservices directory
 mkdir -p app/api/v1 # Versioned API directory more can be added later
 mkdir -p tests
 mkdir -p docker      # Dockerfiles and Compose configurations

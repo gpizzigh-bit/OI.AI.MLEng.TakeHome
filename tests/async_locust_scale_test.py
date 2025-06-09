@@ -10,9 +10,11 @@ API_ENDPOINTS = [
     "/api/v1/triton_predict",
 ]
 
+HOST = "http://marine_classifier:29000"
+
 
 class ImageClassificationUser(HttpUser):
-    host = "http://localhost:9000"
+    host = HOST
     wait_time = between(1, 3)
 
     def get_random_image(self):

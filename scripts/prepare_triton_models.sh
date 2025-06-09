@@ -3,7 +3,7 @@
 set -e
 
 # Define the base directory for the Triton model repository
-MODEL_REPO="/workspaces/OI.AI.MLEng.TakeHome/app/services/triton/models"
+MODEL_REPO="/workspaces/OI.AI.MLEng.TakeHome/services/triton/models"
 
 # Determine Poetry environment's Python executable
 PYTHON_PATH=$(poetry env info --path)/bin/python

@@ -94,9 +94,24 @@ services:
       - "4317:4317"
       - "9091:9090"   # optional Prometheus exporter
     volumes:
-      - ../app/services/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ../services/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     networks:
       - skynet
+
+  marine-classifier-api:
+    container_name: marine_classifier
+    build:
+      context: ..
+      dockerfile: docker/marine.Dockerfile
+    environment:
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=""
+      - TF_CPP_MIN_LOG_LEVEL=3
+      - TF_ENABLE_ONEDNN_OPTS=0
+    networks:
+      - skynet
+    ports:
+      - "29000:29000"
 
 networks:
   skynet:

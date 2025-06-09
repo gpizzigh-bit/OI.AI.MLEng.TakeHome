@@ -28,6 +28,8 @@ dependencies = [
     "tritonclient (>=2.58.0,<3.0.0)",
     "pandas (>=2.3.0,<3.0.0)",
     "onnxruntime[tools] (>=1.22.0,<2.0.0)",
+    "prometheus-client (>=0.22.1,<0.23.0)",
+    "prometheus-fastapi-instrumentator (>=7.1.0,<8.0.0)",
 ]
 
 [tool.isort]

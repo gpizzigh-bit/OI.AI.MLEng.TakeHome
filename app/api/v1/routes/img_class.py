@@ -1,10 +1,13 @@
-# app/routes.py
-
 from typing import List
 
 import structlog
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
+# Prometheus metrics
+from app.metrics import (
+    INFERENCE_DURATION,
+    INFERENCE_REQUESTS,
+)
 from app.models import resnet
 from app.models.multimodel import ModelManager
 from app.models.tritonservice import TritonMultiModel
@@ -58,6 +61,7 @@ async def predict(file: UploadFile = File(...)) -> dict:
         if an unexpected error occurs during prediction.
     """
     try:
+        model_name = "ResNet50"  # Specify the model name for metrics
         if file.content_type not in ALLOWED_CONTENT_TYPES:
             logger.warning("Unsupported file type", content_type=file.content_type)
             raise HTTPException(
@@ -74,16 +78,21 @@ async def predict(file: UploadFile = File(...)) -> dict:
                 detail="Uploaded file is empty.",
             )
 
-        result = return_the_highest_confidence(
-            resnet.classify_image(image_data)["predictions"]
-        )
+        # Time and count inference
+        with INFERENCE_DURATION.labels(model_name=model_name).time():
+            pred = resnet.classify_image(image_data)["predictions"]
+        INFERENCE_REQUESTS.labels(model_name=model_name, status="success").inc()
+
+        result = return_the_highest_confidence(predictions=pred)
         logger.info("Image classified successfully", result=result)
         return {"result": result}
 
     except HTTPException as http_exc:
+        INFERENCE_REQUESTS.labels(model_name=model_name, status="failure").inc()
         logger.error("HTTPException occurred", detail=http_exc.detail)
         raise http_exc
     except Exception as e:
+        INFERENCE_REQUESTS.labels(model_name=model_name, status="failure").inc()
         logger.exception("Unexpected error during prediction: error", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -130,9 +139,9 @@ async def smart_predict(file: UploadFile = File(...)) -> dict:
         )
 
     try:
-        # 3) Delegate to ModelManager.classify_image
-        out = await ModelManager.classify_image(image_data)
-        # out is {"model_used": "...", "predictions": [ {...}, ... ]}
+        with INFERENCE_DURATION.labels(model_name="multi").time():
+            out = await ModelManager.classify_image(image_data)
+        INFERENCE_REQUESTS.labels(model_name=out["model_used"], status="success").inc()
 
         best = return_the_highest_confidence(out["predictions"])
         # Optionally attach which backbone was used:
@@ -141,10 +150,12 @@ async def smart_predict(file: UploadFile = File(...)) -> dict:
         logger.info("Image classified successfully (smart_predict)", result=best)
         return {"result": best}
 
-    except ValueError as ve:
-        logger.error("PIL decode error or invalid image", error=str(ve))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except HTTPException as http_exc:
+        INFERENCE_REQUESTS.labels(model_name="multi", status="failure").inc()
+        logger.error("HTTPException in smart_predict", detail=http_exc.detail)
+        raise
     except Exception as e:
+        INFERENCE_REQUESTS.labels(model_name="multi", status="failure").inc()
         logger.exception("Unexpected error during smart_predict", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -174,8 +185,15 @@ async def triton_predict(file: UploadFile = File(...)) -> dict:
         if an unexpected error occurs during prediction.
     """
     try:
+        model_label = "triton_multi"  # Specify the model class for metrics
         image_data = await file.read()
-        result = await triton_multi_model.classify_image(image_data)
+
+        with INFERENCE_DURATION.labels(model_name=model_label).time():
+            result = await triton_multi_model.classify_image(image_data)
+        INFERENCE_REQUESTS.labels(
+            model_name=result["model_used"], status="success"
+        ).inc()
+
         logger.info("Image classified successfully using Triton", result=result)
         best = return_the_highest_confidence(result["predictions"])
 
@@ -184,6 +202,7 @@ async def triton_predict(file: UploadFile = File(...)) -> dict:
 
         return {"result": best}
     except Exception as e:
+        INFERENCE_REQUESTS.labels(model_name=model_label, status="failure").inc()
         logger.exception("Unexpected error during Triton prediction", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

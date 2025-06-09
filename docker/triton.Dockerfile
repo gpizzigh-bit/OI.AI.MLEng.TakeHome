@@ -5,7 +5,7 @@ FROM nvcr.io/nvidia/tritonserver:25.05-py3
 WORKDIR /models
 
 # Copy your entire model repository into the container image
-COPY ./app/services/triton/models /models
+COPY ./services/triton/models /models
 
 # Expose necessary ports for Triton Inference Server
 EXPOSE 8000 8001 8002

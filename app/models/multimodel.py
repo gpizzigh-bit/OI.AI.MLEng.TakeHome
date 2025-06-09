@@ -146,7 +146,7 @@ class ModelManager:
         return cls._models[model_name]
 
     @classmethod
-    def load_all_models(cls):
+    def load_all_models(cls) -> None:
         """
         Force-load every model named in CPU_TO_MODEL into memory. Call this
         once at program startup (e.g. in FastAPI’s startup event) so that
@@ -157,7 +157,7 @@ class ModelManager:
             cls.get_model(name)
 
     @classmethod
-    def clear(cls):
+    def clear(cls) -> None:
         """
         Clear all loaded models from RAM and reset the Keras session.
         Call this when the program is terminating.
