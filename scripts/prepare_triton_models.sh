@@ -11,18 +11,28 @@ PYTHON_PATH=$(poetry env info --path)/bin/python
 # Create the base directory if it doesn't exist
 mkdir -p "$MODEL_REPO"
 
+# if there are models already in the directory, remove them
+if [ -d "$MODEL_REPO" ]; then
+  echo "Removing existing models in $MODEL_REPO..."
+  rm -rf "$MODEL_REPO"/*
+else
+  echo "Creating model repository directory at $MODEL_REPO..."
+fi
+
 # Define an associative array of models and their corresponding input sizes
+# Some models are commented out because Triton runing on my personal 16Gb RAM machine
+# may not be able to handle them due to memory constraints.
 declare -A models
 models=(
   ["Xception"]="299 299"
   ["ResNet152V2"]="224 224"
   ["ResNet101V2"]="224 224"
   ["ResNet50V2"]="224 224"
-  ["ResNet152"]="224 224"
-  ["ResNet101"]="224 224"
-  ["ResNet50"]="224 224"
-  ["VGG19"]="224 224"
-  ["VGG16"]="224 224"
+  # ["ResNet152"]="224 224"
+  # ["ResNet101"]="224 224"
+  # ["ResNet50"]="224 224"
+  # ["VGG19"]="224 224"
+  # ["VGG16"]="224 224"
 )
 
 # Loop through each model
@@ -48,11 +58,11 @@ from tensorflow.keras.applications import (
     ResNet152V2,
     ResNet101V2,
     ResNet50V2,
-    ResNet152,
-    ResNet101,
-    ResNet50,
-    VGG19,
-    VGG16,
+    # ResNet152,
+    # ResNet101,
+    # ResNet50,
+    # VGG19,
+    # VGG16,
 )
 import tf2onnx
 import numpy as np
@@ -63,11 +73,11 @@ model_constructors = {
     "ResNet152V2": ResNet152V2,
     "ResNet101V2": ResNet101V2,
     "ResNet50V2": ResNet50V2,
-    "ResNet152": ResNet152,
-    "ResNet101": ResNet101,
-    "ResNet50": ResNet50,
-    "VGG19": VGG19,
-    "VGG16": VGG16,
+    # "ResNet152": ResNet152,
+    # "ResNet101": ResNet101,
+    # "ResNet50": ResNet50,
+    # "VGG19": VGG19,
+    # "VGG16": VGG16,
 }
 
 # Load the model

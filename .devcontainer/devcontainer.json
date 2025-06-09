@@ -18,5 +18,6 @@
       }
     }
   },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/OI.AI.MLEng.TakeHome,type=bind,consistency=cached",
   "forwardPorts": [8000]
 }

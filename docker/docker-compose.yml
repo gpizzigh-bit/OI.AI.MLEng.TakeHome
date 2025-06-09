@@ -28,6 +28,79 @@ services:
       # Use more CPU threads for inference (adjust to number of CPU cores)
       OMP_NUM_THREADS: "4"       # or higher if you have more cores
       OPENBLAS_NUM_THREADS: "4"  # or higher if using OpenBLAS for ONNX
+      deploy:
+    mem_limit: 6g
+
+  prometheus:
+    build:
+      context: ..
+      dockerfile: docker/prometheus.Dockerfile
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - skynet
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - skynet
+
+  loki:
+    build:
+      context: ..
+      dockerfile: docker/loki.Dockerfile
+    container_name: loki
+    ports:
+      - "3100:3100"
+    networks:
+      - skynet
+
+  fluent-bit:
+    build:
+      context: ..
+      dockerfile: docker/fluent-bit.Dockerfile
+    container_name: fluent-bit
+    ports:
+      - "24224:24224/tcp"
+      - "24224:24224/udp"
+      - "2020:2020"
+      - "2021:2021"
+    networks:
+      - skynet
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "4318:4317"
+    networks:
+      - skynet
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    ports:
+      - "4317:4317"
+      - "9091:9090"   # optional Prometheus exporter
+    volumes:
+      - ../app/services/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - skynet
 
 networks:
   skynet:
+    driver: bridge
+
+volumes:
+  grafana_data:
