@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "aeof7unbp6dq8b"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -107,7 +107,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "aeof7unbp6dq8b"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -125,7 +125,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "aeof7unbp6dq8b"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -233,7 +233,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "aeof7unbp6dq8b"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -251,7 +251,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "aeof7unbp6dq8b"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -334,7 +334,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "aeof7unbp6dq8b"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -352,7 +352,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "aeof7unbp6dq8b"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -405,7 +405,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "aeof7unbp6dq8b"
+            "uid": "prometheus"
           },
           "expr": "marine_classifier_model_load_seconds",
           "interval": "",
@@ -419,7 +419,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "aeof7unbp6dq8b"
+        "uid": "prometheus"
       },
       "description": "What’s the HTTP request duration that’s faster than 95% of requests over the last 24 hours?",
       "fieldConfig": {
@@ -500,7 +500,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "aeof7unbp6dq8b"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(\r\n  0.95,\r\n  sum(rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/predict|/api/v1/smart_predict|/api/v1/triton_predict\"}[3h])) by (le, endpoint)\r\n)\r\n",
@@ -515,8 +515,53 @@
     },
     {
       "datasource": {
+        "type": "loki",
+        "uid": "feogdby24ak1sd"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 12,
+        "y": 11
+      },
+      "id": 9,
+      "options": {
+        "dedupStrategy": "none",
+        "enableInfiniteScrolling": false,
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "feogdby24ak1sd"
+          },
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "{job=\"\\\\\\\"marine-service\\\\\\\"\"} |= `result_class_name` | json result_class_name=\"result_class_name\"",
+          "legendFormat": "{{result_class_name}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "LOGS",
+      "type": "logs"
+    },
+    {
+      "datasource": {
         "type": "prometheus",
-        "uid": "aeof7unbp6dq8b"
+        "uid": "prometheus"
       },
       "description": "How many inference requests have been processed by the system, broken down by model name and whether they succeeded or failed",
       "fieldConfig": {
@@ -574,7 +619,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "aeof7unbp6dq8b"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(inference_requests_total) by (model_name, status)",
@@ -590,19 +635,19 @@
     }
   ],
   "preload": false,
-  "refresh": "1d",
+  "refresh": "auto",
   "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Marine Classifier Dashboard",
-  "uid": "8c2c64ad-2ff6-41f8-bf3c-9b40c899ed77",
-  "version": 15
+  "uid": "prometheus",
+  "version": 4
 }

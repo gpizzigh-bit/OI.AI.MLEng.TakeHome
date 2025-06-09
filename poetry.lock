@@ -751,6 +751,21 @@ files = [
 ]
 
 [[package]]
+name = "fluent-logger"
+version = "0.11.1"
+description = "A Python logging handler for Fluentd event collector"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "fluent_logger-0.11.1-py3-none-any.whl", hash = "sha256:1601c4b929a93b4aef03310573387ac808cf4463cdeaf619c39b257da34c0c0c"},
+    {file = "fluent_logger-0.11.1.tar.gz", hash = "sha256:6727525ba08671b758e3ac222f36fa3345bc1a77b81e7ddbc045ced68f44cd77"},
+]
+
+[package.dependencies]
+msgpack = ">=1.0"
+
+[[package]]
 name = "gast"
 version = "0.6.0"
 description = "Python AST that abstracts the underlying Python version"
@@ -3513,4 +3528,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "1a557945009f4f71745f1cf3309e5355991c8be2f9293061a2c09f9632babfa4"
+content-hash = "b18346d4587fb5c7c01c3f591257668607f7cd82aa64aa33182c903a5b2faf4c"

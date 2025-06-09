@@ -115,6 +115,7 @@ services:
 
 networks:
   skynet:
+    external: true
     driver: bridge
 
 volumes:
