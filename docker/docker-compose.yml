@@ -1,0 +1,138 @@
+
+name: OI.AI.MLENG.TAKEHOME
+
+services:
+  triton:
+    build:
+      context: ..
+      dockerfile: docker/triton.Dockerfile
+    container_name: triton_cpu
+    ports:
+      - "8000:8000"  # HTTP endpoint
+      - "8001:8001"  # gRPC endpoint
+      - "8002:8002"  # Metrics endpoint
+    networks:
+      - skynet
+    command: >
+      tritonserver
+      --model-repository=/models
+      --log-verbose=1
+      --model-control-mode=poll
+      --backend-config=onnxruntime,session_thread_pool_size=4
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      # Use more CPU threads for inference (adjust to number of CPU cores)
+      OMP_NUM_THREADS: "4"       # or higher if you have more cores
+      OPENBLAS_NUM_THREADS: "4"  # or higher if using OpenBLAS for ONNX
+      deploy:
+    mem_limit: 6g
+
+  prometheus:
+    build:
+      context: ..
+      dockerfile: docker/prometheus.Dockerfile
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - skynet
+
+  grafana:
+    build:
+      context: ..
+      dockerfile: docker/grafana.Dockerfile
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=ocean_infinity
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - skynet
+
+
+  loki:
+    build:
+      context: ..
+      dockerfile: docker/loki.Dockerfile
+    container_name: loki
+    ports:
+      - "3100:3100"
+    networks:
+      - skynet
+
+  fluent-bit:
+    build:
+      context: ..
+      dockerfile: docker/fluent-bit.Dockerfile
+    container_name: fluent-bit
+    ports:
+      - "24224:24224/tcp"
+      - "24224:24224/udp"
+      - "2020:2020"
+      - "2021:2021"
+    networks:
+      - skynet
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "4318:4317"
+    networks:
+      - skynet
+
+  otel-collector:
+    build:
+      context: ..
+      dockerfile: docker/otel.Dockerfile
+    container_name: otel-collector
+    ports:
+      - "4317:4317"
+      - "9091:9090"   # optional Prometheus exporter
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    networks:
+      - skynet
+
+  marine-classifier-api:
+    container_name: marine_classifier
+    build:
+      context: ..
+      dockerfile: docker/marine.Dockerfile
+    environment:
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=""
+      - TF_CPP_MIN_LOG_LEVEL=3
+      - TF_ENABLE_ONEDNN_OPTS=0
+      - TF_FORCE_GPU_ALLOW_GROWTH=false
+      - THREADPOOL_SIZE=8
+      - OTEL_SERVICE_URL=otel-collector
+      - OTEL_SERVICE_PORT=4317
+      - LOG_FOLDER=logs
+      - LOG_LEVEL=INFO
+      - LOG_FILE_NAME=marine_classifier.log
+      - TRITON_SERVER_NAME=triton_cpu
+      - TRITON_SERVER_PORT=8000
+    networks:
+      - skynet
+    ports:
+      - "29000:29000"
+
+networks:
+  skynet:
+    external: true
+    driver: bridge
+
+volumes:
+  grafana_data:
