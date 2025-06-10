@@ -174,6 +174,11 @@ class ModelManager:
         model = constructor(weights="imagenet")
         return model
 
+    @staticmethod
+    def is_ready():
+        # Check if all models are loaded and ready
+        return all(model is not None for model in ModelManager._models.values())
+
     @classmethod
     def get_model(cls, model_name: str) -> tf.keras.Model:
         """

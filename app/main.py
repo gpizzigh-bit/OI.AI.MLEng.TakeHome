@@ -61,6 +61,7 @@ app = FastAPI(
     description="Classifies marine animal images using  pre-trained ImageNet models.",
     version="1.0.1",
     lifespan=lifespan,
+    redoc_url="/redoc",
 )
 
 # (optional) use FastAPI to expose Prometheus metrics
@@ -120,6 +121,26 @@ async def metrics_middleware(request: Request, call_next):
 
 # Include the API router
 app.include_router(img_class.router, prefix="/api/v1", tags=["Image Classification"])
+
+
+@app.get("/healthz", include_in_schema=False)
+async def health_check():
+    """
+    Health check endpoint to verify the application is running.
+    Returns a 200 status if the app is healthy.
+    """
+    return {"status": "healthy"}
+
+
+@app.get("/readiness", include_in_schema=False)
+async def readiness_check():
+    """
+    Readiness check endpoint to verify the application is ready to serve traffic.
+    Checks if all models are loaded and ready.
+    """
+    if ModelManager.is_ready():
+        return {"status": "ready"}
+    return Response(content="Not Ready", status_code=503)
 
 
 # redirect to redoc documentation
