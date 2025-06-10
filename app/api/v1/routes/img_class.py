@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import structlog
@@ -17,7 +18,10 @@ logger = structlog.get_logger()
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/jpg"}
 
-triton_multi_model = TritonMultiModel("triton_cpu:8000")
+TRITON_SERVER_NAME = os.getenv("TRITON_SERVER_NAME", "triton_cpu")
+TRITON_SERVER_PORT = os.getenv("TRITON_SERVER_PORT", "8000")
+TRITON_SERVER_URL = f"{TRITON_SERVER_NAME}:{TRITON_SERVER_PORT}"
+triton_multi_model = TritonMultiModel(TRITON_SERVER_URL)
 
 
 def return_the_highest_confidence(predictions: List) -> dict | None:

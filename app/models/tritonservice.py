@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import threading
 
 import numpy as np
@@ -18,7 +19,38 @@ from app.config.logger import get_class_logger
 
 tracer = trace.get_tracer(__name__)
 
+# --- LOG_LEVEL from env ---
+LOG_LEVEL = os.getenv("LOG_LEVEL", "info").lower()
 logger = get_class_logger("TritonMultiModel")
+getattr(logger, LOG_LEVEL, logger.info)("Logger initialized", log_level=LOG_LEVEL)
+
+cpu_to_model_env = os.getenv("CPU_TO_MODEL")
+if cpu_to_model_env:
+    try:
+        if cpu_to_model_env.strip().startswith("["):
+            CPU_TO_MODEL = json.loads(cpu_to_model_env)
+        else:
+            CPU_TO_MODEL = [
+                (float(pair.split(":")[0]), pair.split(":")[1])
+                for pair in cpu_to_model_env.split(",")
+            ]
+    except Exception as e:
+        logger.error(
+            "Failed to parse CPU_TO_MODEL env var, using default.", error=str(e)
+        )
+        CPU_TO_MODEL = [
+            (0.30, "ResNet152V2"),
+            (0.60, "ResNet50V2"),
+            (0.85, "ResNet101V2"),
+            (1.00, "ResNet50"),
+        ]
+else:
+    CPU_TO_MODEL = [
+        (0.30, "ResNet152V2"),
+        (0.60, "ResNet50V2"),
+        (0.85, "ResNet101V2"),
+        (1.00, "ResNet50"),
+    ]
 
 # Load ImageNet class mapping
 with open("./app/models/imagenet_class_index.json", "r") as f:
@@ -26,12 +58,7 @@ with open("./app/models/imagenet_class_index.json", "r") as f:
 
 
 class TritonMultiModel:
-    CPU_TO_MODEL = [
-        (0.30, "ResNet152V2"),
-        (0.60, "ResNet50V2"),
-        (0.85, "ResNet101V2"),
-        (1.00, "ResNet50"),
-    ]
+    CPU_TO_MODEL = CPU_TO_MODEL
 
     MODEL_INFO = {
         "Xception": {"preprocess": lambda x: x / 255.0, "input_size": (299, 299)},

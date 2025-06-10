@@ -5,6 +5,9 @@ import sys
 
 import structlog
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "info").lower()
+LOG_LEVEL_NUM = getattr(logging, LOG_LEVEL.upper(), logging.INFO)
+
 
 class TCPJSONHandler(logging.Handler):
     """
@@ -12,8 +15,13 @@ class TCPJSONHandler(logging.Handler):
     to Fluent Bit over a TCP socket.
     """
 
-    def __init__(self, host="fluent-bit", port=24224, timeout=1):
-        super().__init__(level=logging.INFO)
+    def __init__(
+        self,
+        host=os.getenv("FLUENT_BIT_HOST", "fluent-bit"),
+        port=int(os.getenv("FLUENT_BIT_PORT", 24224)),
+        timeout=float(os.getenv("FLUENT_BIT_TIMEOUT", 1)),
+    ):
+        super().__init__(level=LOG_LEVEL_NUM)
         self.host = host
         self.port = port
         self.timeout = timeout
@@ -29,7 +37,10 @@ class TCPJSONHandler(logging.Handler):
             self.handleError(record)
 
 
-def configure_logging(log_folder="logs", log_file_name="app.log"):
+def configure_logging(
+    log_folder=os.getenv("LOG_FOLDER", "logs"),
+    log_file_name=os.getenv("LOG_FILE_NAME", "app.log"),
+):
     """
     Configure structlog + stdlib logging for:
       - File (overwrite each run)
@@ -42,22 +53,22 @@ def configure_logging(log_folder="logs", log_file_name="app.log"):
 
     # File handler
     file_handler = logging.FileHandler(log_file_path, mode="w", encoding="utf-8")
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(LOG_LEVEL_NUM)
     file_handler.setFormatter(logging.Formatter("%(message)s"))
 
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(LOG_LEVEL_NUM)
     console_handler.setFormatter(logging.Formatter("%(message)s"))
 
     # TCP JSON handler for Fluent Bit
-    tcp_handler = TCPJSONHandler(host="fluent-bit", port=24224)
-    tcp_handler.setLevel(logging.INFO)
+    tcp_handler = TCPJSONHandler()
+    tcp_handler.setLevel(LOG_LEVEL_NUM)
     tcp_handler.setFormatter(logging.Formatter("%(message)s"))
 
     # Root logger setup
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(LOG_LEVEL_NUM)
     if root_logger.hasHandlers():
         root_logger.handlers.clear()
     root_logger.addHandler(file_handler)
@@ -74,12 +85,12 @@ def configure_logging(log_folder="logs", log_file_name="app.log"):
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+        wrapper_class=structlog.make_filtering_bound_logger(LOG_LEVEL_NUM),
         cache_logger_on_first_use=True,
     )
 
 
-def get_class_logger(class_name: str, log_folder="logs"):
+def get_class_logger(class_name: str, log_folder=os.getenv("LOG_FOLDER", "logs")):
     """
     Creates a dedicated structlog logger for a specific class, writing to its own file
     and sending to Fluent Bit over TCP.
@@ -89,18 +100,18 @@ def get_class_logger(class_name: str, log_folder="logs"):
 
     # File handler for this class
     file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(LOG_LEVEL_NUM)
     file_handler.setFormatter(logging.Formatter("%(message)s"))
 
     # TCP handler for this class
-    tcp_handler = TCPJSONHandler(host="fluent-bit", port=24224)
-    tcp_handler.setLevel(logging.INFO)
+    tcp_handler = TCPJSONHandler()
+    tcp_handler.setLevel(LOG_LEVEL_NUM)
     tcp_handler.setFormatter(logging.Formatter("%(message)s"))
 
     # Create a separate logger instance
     logger_name = f"{class_name}_logger"
     dedicated_logger = logging.getLogger(logger_name)
-    dedicated_logger.setLevel(logging.INFO)
+    dedicated_logger.setLevel(LOG_LEVEL_NUM)
     dedicated_logger.handlers.clear()
     dedicated_logger.addHandler(file_handler)
     dedicated_logger.addHandler(tcp_handler)

@@ -1,4 +1,5 @@
 import io
+import os
 
 import numpy as np
 import structlog
@@ -9,8 +10,17 @@ from tensorflow.keras.applications.resnet50 import decode_predictions, preproces
 
 tracer = trace.get_tracer(__name__)
 
-# Initialize the logger
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "info").lower()
+structlog.configure(logger_factory=structlog.stdlib.LoggerFactory())
 logger = structlog.get_logger()
+getattr(logger, LOG_LEVEL, logger.info)("Logger initialized", log_level=LOG_LEVEL)
+
+
+if os.getenv("TF_FORCE_GPU_ALLOW_GROWTH", "false").lower() == "true":
+    gpus = tf.config.experimental.list_physical_devices("GPU")
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
 
 
 # Load the ResNet50 model with ImageNet weights

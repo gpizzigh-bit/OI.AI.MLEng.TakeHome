@@ -7,6 +7,7 @@
     "ghcr.io/devcontainers-extra/features/poetry:2": {},
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
+  "initializeCommand": "docker network create skynet || true",
   "postCreateCommand": "chmod +x ./scripts/setup-infra.sh && ./scripts/setup-infra.sh",
   "containerEnv": {
     "PYTHONPATH": "/workspaces/OI.AI.MLEng.TakeHome"

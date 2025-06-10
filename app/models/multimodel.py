@@ -1,11 +1,15 @@
+import asyncio
+import concurrent.futures
 import io
+import json
+import os
 import threading
+from functools import partial
 
 import numpy as np
 import psutil
 import structlog
 import tensorflow as tf
-from fastapi.concurrency import run_in_threadpool
 from opentelemetry import trace
 from PIL import Image
 from tensorflow.keras.applications import (
@@ -28,7 +32,18 @@ from tensorflow.keras.applications import (
 tracer = trace.get_tracer(__name__)
 
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "info").lower()
+structlog.configure(logger_factory=structlog.stdlib.LoggerFactory())
 logger = structlog.get_logger()
+getattr(logger, LOG_LEVEL, logger.info)("Logger initialized", log_level=LOG_LEVEL)
+
+THREADPOOL_SIZE = int(os.getenv("THREADPOOL_SIZE", "4"))
+threadpool_executor = concurrent.futures.ThreadPoolExecutor(max_workers=THREADPOOL_SIZE)
+
+if os.getenv("TF_FORCE_GPU_ALLOW_GROWTH", "false").lower() == "true":
+    gpus = tf.config.experimental.list_physical_devices("GPU")
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
 
 
 class ModelManager:
@@ -44,12 +59,35 @@ class ModelManager:
     # 1) “CPU load → model name” mapping: thresholds must be in ascending order.
     #    If CPU ≤ threshold → pick that model. CPU is measured as a fraction (0.0–1.0).
     # -----------------------------------------------------------
-    CPU_TO_MODEL = [
-        (0.30, "ResNet152V2"),  # when CPU ≤ 30%, use the heaviest (most accurate)
-        (0.60, "ResNet50V2"),
-        (0.85, "ResNet101V2"),
-        (1.00, "ResNet50"),  # when CPU > 85%, drop to ResNet50 for speed
-    ]
+    cpu_to_model_env = os.getenv("CPU_TO_MODEL")
+    if cpu_to_model_env:
+        try:
+            # Try JSON first, fallback to colon/comma format
+            if cpu_to_model_env.strip().startswith("["):
+                CPU_TO_MODEL = json.loads(cpu_to_model_env)
+            else:
+                # Format: "0.30:ResNet152V2,0.60:ResNet50V2,0.85:ResNet101V2,1.00:ResNet50"
+                CPU_TO_MODEL = [
+                    (float(pair.split(":")[0]), pair.split(":")[1])
+                    for pair in cpu_to_model_env.split(",")
+                ]
+        except Exception as e:
+            logger.error(
+                "Failed to parse CPU_TO_MODEL env var, using default.", error=str(e)
+            )
+            CPU_TO_MODEL = [
+                (0.30, "ResNet152V2"),
+                (0.60, "ResNet50V2"),
+                (0.85, "ResNet101V2"),
+                (1.00, "ResNet50"),
+            ]
+    else:
+        CPU_TO_MODEL = [
+            (0.30, "ResNet152V2"),
+            (0.60, "ResNet50V2"),
+            (0.85, "ResNet101V2"),
+            (1.00, "ResNet50"),
+        ]
 
     # -----------------------------------------------------------
     # 2) For each model name, we store:
@@ -233,7 +271,11 @@ class ModelManager:
 
             # 4) Inference (inside threadpool!)
             with tracer.start_as_current_span("inference_call"):
-                preds = await run_in_threadpool(model.predict, x)
+                loop = asyncio.get_running_loop()
+                preds = await loop.run_in_executor(
+                    threadpool_executor,  # Use the custom executor
+                    partial(model.predict, x),  # Pass the model's predict function
+                )
 
             # 5) Postprocessing
             with tracer.start_as_current_span("postprocessing"):

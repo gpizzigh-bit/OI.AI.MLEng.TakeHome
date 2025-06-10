@@ -1,3 +1,4 @@
+import os
 import time
 from contextlib import asynccontextmanager
 
@@ -29,18 +30,18 @@ from app.metrics import (  # MODEL_LOAD_TIME,; INFERENCE_REQUESTS,; INFERENCE_DU
 from app.models.multimodel import ModelManager
 
 # Configure logger specifically for this class
+LOG_LEVEL = os.getenv("LOG_LEVEL", "info").lower()
 configure_logging(log_folder="logs", log_file_name="main.log")
+logger = structlog.get_logger()
+getattr(logger, LOG_LEVEL, logger.info)("Logger initialized", log_level=LOG_LEVEL)
+
+OTEL_SERVICE_URL = os.getenv("OTEL_SERVICE_URL", "otel-collector")
+OTEL_SERVICE_PORT = os.getenv("OTEL_SERVICE_PORT", "4317")
+# Set up the OpenTelemetry exporter endpoint
+OTEL_ENDPOINT = f"http://{OTEL_SERVICE_URL}:{OTEL_SERVICE_PORT}"
 
 # Create the logger
 logger = structlog.get_logger()
-
-
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     ModelManager.load_all_models()
-#     yield
-#     # Cleanup models
-#     ModelManager.clear()
 
 
 @asynccontextmanager
@@ -76,14 +77,14 @@ resource = Resource.create(
 
 trace.set_tracer_provider(TracerProvider(resource=resource))
 otlp_span_exporter = OTLPSpanExporter(
-    endpoint="http://otel-collector:4317",
+    endpoint=OTEL_ENDPOINT,
     insecure=True,
 )
 span_processor = BatchSpanProcessor(otlp_span_exporter)
 trace.get_tracer_provider().add_span_processor(span_processor)
 
 metric_reader = PeriodicExportingMetricReader(
-    OTLPMetricExporter(endpoint="http://otel-collector:4317", insecure=True),
+    OTLPMetricExporter(endpoint=OTEL_ENDPOINT, insecure=True),
     export_interval_millis=5000,
 )
 meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
