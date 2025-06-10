@@ -5,8 +5,8 @@ from locust import HttpUser, between
 
 # List of endpoints to test
 API_ENDPOINTS = [
-    # "/api/v1/predict",
-    # "/api/v1/smart_predict",
+    "/api/v1/predict",
+    "/api/v1/smart_predict",
     "/api/v1/triton_predict",
 ]
 

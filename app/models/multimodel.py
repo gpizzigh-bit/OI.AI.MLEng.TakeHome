@@ -6,6 +6,7 @@ import psutil
 import structlog
 import tensorflow as tf
 from fastapi.concurrency import run_in_threadpool
+from opentelemetry import trace
 from PIL import Image
 from tensorflow.keras.applications import (
     VGG16,
@@ -23,6 +24,9 @@ from tensorflow.keras.applications import (
     vgg19,
     xception,
 )
+
+tracer = trace.get_tracer(__name__)
+
 
 logger = structlog.get_logger()
 
@@ -199,46 +203,58 @@ class ModelManager:
                   ]
                 }
         """
-        # 1) Pick model by CPU
-        chosen_model_name = cls._choose_model_by_cpu()
+        with tracer.start_as_current_span("modelmanager_classify_image") as span:
+            # 1) Pick model by CPU
+            with tracer.start_as_current_span("model_selection") as selection_span:
+                chosen_model_name = cls._choose_model_by_cpu()
+                selection_span.set_attribute("model.name", chosen_model_name)
+                # Also attach to parent span for higher-level context
+                span.set_attribute("model.name", chosen_model_name)
 
-        # 2) Retrieve the Keras model (already in memory if load_all_models() ran)
-        model = cls.get_model(chosen_model_name)
+            # 2) Retrieve the model
+            with tracer.start_as_current_span("model_retrieval"):
+                model = cls.get_model(chosen_model_name)
+                info = cls.MODEL_INFO[chosen_model_name]
+                preprocess_fn = info["preprocess"]
+                decode_fn = info["decode"]
+                input_h, input_w = info["input_size"]
 
-        # 3) Preprocess the raw bytes → numpy array
-        info = cls.MODEL_INFO[chosen_model_name]
-        preprocess_fn = info["preprocess"]
-        decode_fn = info["decode"]
-        input_h, input_w = info["input_size"]
+            # 3) Preprocessing
+            with tracer.start_as_current_span("preprocessing"):
+                try:
+                    img = Image.open(io.BytesIO(image_data)).convert("RGB")
+                except Exception as e:
+                    raise ValueError(f"Could not decode image bytes: {e}")
 
-        try:
-            img = Image.open(io.BytesIO(image_data)).convert("RGB")
-        except Exception as e:
-            raise ValueError(f"Could not decode image bytes: {e}")
+                img = img.resize((input_w, input_h))
+                x = np.asarray(img, dtype=np.float32)
+                x = np.expand_dims(x, axis=0)
+                x = preprocess_fn(x)
 
-        img = img.resize((input_w, input_h))
-        x = np.asarray(img, dtype=np.float32)
-        x = np.expand_dims(x, axis=0)  # (1, H, W, 3)
-        x = preprocess_fn(x)
+            # 4) Inference (inside threadpool!)
+            with tracer.start_as_current_span("inference_call"):
+                preds = await run_in_threadpool(model.predict, x)
 
-        # 4) Inference: run the blocking `model.predict(...)` inside a ThreadPool
-        preds = await run_in_threadpool(model.predict, x)
+            # 5) Postprocessing
+            with tracer.start_as_current_span("postprocessing"):
+                decoded = decode_fn(preds, top=5)[0]
+                results = []
+                for class_id, class_name, score in decoded:
+                    results.append(
+                        {
+                            "class_id": class_id,
+                            "class_name": class_name,
+                            "confidence": float(score),
+                        }
+                    )
 
-        # 5) Decode top-5 (returns a list of lists, so take [0])
-        decoded = decode_fn(preds, top=5)[0]
+                # Optionally attach top prediction’s confidence
+                if results:
+                    span.set_attribute(
+                        "top_prediction.confidence", results[0]["confidence"]
+                    )
 
-        # 6) Build our “predictions” list of dicts
-        results = []
-        for class_id, class_name, score in decoded:
-            results.append(
-                {
-                    "class_id": class_id,
-                    "class_name": class_name,
-                    "confidence": float(score),
-                }
-            )
-
-        return {
-            "model_used": chosen_model_name,
-            "predictions": results,
-        }
+            return {
+                "model_used": chosen_model_name,
+                "predictions": results,
+            }

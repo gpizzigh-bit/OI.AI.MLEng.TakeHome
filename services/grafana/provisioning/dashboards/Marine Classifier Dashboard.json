@@ -516,7 +516,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "feogdby24ak1sd"
+        "uid": "loki"
       },
       "fieldConfig": {
         "defaults": {},

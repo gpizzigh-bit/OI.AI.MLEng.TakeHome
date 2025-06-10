@@ -4,6 +4,17 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
+from opentelemetry import metrics as otel_metrics
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from prometheus_client import make_asgi_app
 
 from app.api.v1.routes import img_class
@@ -46,14 +57,44 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="(Ocean Infinity) Marine Image Classifier",
-    description="Classifies marine animal images using a pre-trained ImageNet model soup (BASIC-L).",
-    version="0.0.1",
+    description="Classifies marine animal images using  pre-trained ImageNet models.",
+    version="1.0.1",
     lifespan=lifespan,
 )
 
 # (optional) use FastAPI to expose Prometheus metrics
 # Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
+
+# Initialize OpenTelemetry instrumentation
+resource = Resource.create(
+    {
+        "service.name": "marine-classifier-api",
+        "service.version": "0.0.1",
+    }
+)
+
+trace.set_tracer_provider(TracerProvider(resource=resource))
+otlp_span_exporter = OTLPSpanExporter(
+    endpoint="http://otel-collector:4317",
+    insecure=True,
+)
+span_processor = BatchSpanProcessor(otlp_span_exporter)
+trace.get_tracer_provider().add_span_processor(span_processor)
+
+metric_reader = PeriodicExportingMetricReader(
+    OTLPMetricExporter(endpoint="http://otel-collector:4317", insecure=True),
+    export_interval_millis=5000,
+)
+meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+otel_metrics.set_meter_provider(meter_provider)
+
+# Instrument FastAPI with OpenTelemetry
+FastAPIInstrumentor.instrument_app(
+    app,
+)
+# Add OpenTelemetry middleware to the app
+app.add_middleware(OpenTelemetryMiddleware)
 # i will use the custom one for the challenge to show skill:
 # Expose Prometheus metrics endpoint
 app.mount("/metrics", make_asgi_app())

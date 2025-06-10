@@ -3,16 +3,33 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
 exporters:
-  jaeger:
+  otlp/jaeger:
     endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+
   prometheus:
     endpoint: "0.0.0.0:9090"
+
+  debug:
+    verbosity: detailed
+    sampling_initial: 1
+    sampling_thereafter: 1
+
+processors:
+  batch: {}
+
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [jaeger]
+      processors: [batch]
+      exporters: [otlp/jaeger, debug]
     metrics:
       receivers: [otlp]
-      exporters: [prometheus]
+      processors: [batch]
+      exporters: [prometheus, debug]

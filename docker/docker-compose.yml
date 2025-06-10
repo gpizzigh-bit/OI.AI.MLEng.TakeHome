@@ -42,7 +42,9 @@ services:
       - skynet
 
   grafana:
-    image: grafana/grafana:latest
+    build:
+      context: ..
+      dockerfile: docker/grafana.Dockerfile
     container_name: grafana
     ports:
       - "3000:3000"
@@ -52,8 +54,12 @@ services:
       - jaeger
     volumes:
       - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=ocean_infinity
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
       - skynet
+
 
   loki:
     build:
@@ -88,13 +94,14 @@ services:
       - skynet
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    build:
+      context: ..
+      dockerfile: docker/otel.Dockerfile
     container_name: otel-collector
     ports:
       - "4317:4317"
       - "9091:9090"   # optional Prometheus exporter
-    volumes:
-      - ../services/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
     networks:
       - skynet
 
