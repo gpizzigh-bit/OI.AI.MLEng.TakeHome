@@ -291,8 +291,4 @@ Attention: For now the Kubernetes deployment is not wet implemented in the autom
 
 ## License
 
-This project is intended for the Ocean Infinity Machine Learning Engineering challenge. All rights reserved.
-
----
-
-Let me know if you’d like me to add a **"How to Contribute"** section, a **"License"** notice, or anything else! 🚀
+This project is intended for the Ocean Infinity Machine Learning Engineering challenge.
