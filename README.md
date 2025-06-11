@@ -1,10 +1,6 @@
-Here’s an improved and polished version of your README, addressing clarity, grammar, structure, and making it more professional:
-
----
-
 # Marine Classifier API
 
-This repository contains the **Marine Classifier API**, a FastAPI-based service for image classification using a Triton Inference Server. The service is containerized and includes observability tools such as Prometheus, Grafana, Loki, and OpenTelemetry.
+This repository contains the **Marine Classifier API**, a FastAPI-based service for image classification using a Triton Inference Server. The service is containerized and includes observability tools such as Prometheus, Grafana, Jager, and Fluent-bit.
 
 ✅ **Challenge Deliverables Fulfilled:**
 
@@ -14,7 +10,7 @@ classification result.
 * Provided observability features and monitoring dashboards.
 * Enabled asynchronous request handling to process multiple requests in parallel.
 * Use pre-commit hooks and lint the code.
-* Add automated tests to ensure the service’s reliability. (if coverage bellow 30%, just to demonstrate the approach).
+* Add automated tests to ensure the service’s reliability. (for now coverage is bellow 30%, just to demonstrate the approach).
 
  **Extra Features:**
  * Implemented a dynamic loading mechanism based on CPU usage to switch between models.
@@ -56,14 +52,120 @@ You have two options:
 
 #### Option 1 – **Manual Setup** (More Control)
 
-1. Open the project in VS Code.
-2. Ensure you have the **Dev Containers** extension installed.
-3. Open the command palette (`Ctrl+Shift+P`) and select:
+1. Open the project in **VS Code**.
 
+2. Ensure you have the **Dev Containers** extension installed and open the project in a container:
+
+   * Open the command palette (`Ctrl+Shift+P`).
+   * Select:
+
+     ```
+     Dev Containers: Open Folder in Container
+     ```
+   * Choose this project folder to launch the **preconfigured development environment**.
+
+3. Once inside the container, navigate to the project root:
+
+   ```bash
+   cd /workspaces/OI.AI.MLEng.TakeHome
    ```
-   Dev Containers: Open Folder in Container
+
+4. **Prepare the environment**:
+   Make sure the Python environment is set up using Poetry:
+
+   ```bash
+   poetry install
    ```
-4. Select this project folder to launch the preconfigured dev environment.
+
+5. **Download the test images**:
+
+   ```bash
+   bash scripts/get_test_images.sh
+   ```
+
+6. **Download and prepare the Triton models**:
+
+   ```bash
+   bash scripts/prepare_triton_models.sh
+   ```
+
+7. **Start the infrastructure** (using Docker Compose):
+
+   ```bash
+   bash scripts/setup-infra.sh
+   ```
+
+   This will start all required services, including:
+
+   * `marine_classifier` API
+   * Supporting services (e.g., databases, observability tools)
+
+8. **Add your dev container to the `skynet` network**:
+
+   ```bash
+   sudo docker network connect skynet {your_container_name}
+   ```
+   Replace `{your_container_name}` with the name of your dev container.
+    You can find the container name by running:
+
+    ```bash
+    docker ps
+    ```
+
+9. **Check if the API is ready**:
+   Test the readiness endpoint manually to confirm it’s healthy:
+
+   ```bash
+   curl http://marine_classifier:29000/readiness
+   ```
+
+   If you see:
+
+   ```json
+   {"status":"ready"}
+   ```
+
+   it’s good to go!
+
+10. **Run the API test scripts manually**:
+
+* **ResNet50 predict API**:
+
+  ```bash
+  bash scripts/test_resnet50_api.sh
+  ```
+* **CPU load balancing smart API**:
+
+  ```bash
+  bash scripts/test_cpu_load_balancing.sh
+  ```
+* **Triton inference service API**:
+
+  ```bash
+  bash scripts/test_triton_api.sh
+  ```
+* **Load testing with Locust**:
+
+  ```bash
+  bash scripts/test_locust.sh
+  ```
+
+  Then open [http://localhost:8089](http://localhost:8089) in your browser to configure and run load tests.
+
+11. For observability and monitoring, you can access the following tools:
+
+| Tool           | URL                                              | Notes                                                                                                             |
+| -------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| **API**        | [http://localhost:29000](http://localhost:29000) | API documentation available via ReDoc.                                                                            |
+| **Prometheus** | [http://localhost:9090](http://localhost:9090)   | Monitoring and metrics (optional).                                                                                |
+| **Grafana**    | [http://localhost:3000](http://localhost:3000)   | Default credentials: `USER: ocean_infinty` / `PASS: admin`.<br/>Preconfigured dashboard: “Marine Classifier API”. |
+| **Jaeger**     | [http://localhost:16686](http://localhost:16686) | Distributed tracing.                                                                                              |
+
+12. **When you’re done**, **stop and clean up resources**:
+
+```bash
+bash scripts/stop_and_clean.sh
+```
 
 #### Option 2 – **Automated Setup** (Recommended for Windows using WSL2)
 
