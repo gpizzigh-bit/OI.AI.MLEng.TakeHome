@@ -5,9 +5,9 @@ set -e
 NETWORK_NAME="skynet"
 
 # Check if the network exists
-if ! docker network ls --format '{{.Name}}' | grep -q "^${NETWORK_NAME}$"; then
+if ! sudo docker network ls --format '{{.Name}}' | grep -q "^${NETWORK_NAME}$"; then
   echo "Creating network: ${NETWORK_NAME}"
-  docker network create ${NETWORK_NAME}
+  sudo docker network create ${NETWORK_NAME}
 else
   echo "Network ${NETWORK_NAME} already exists"
 fi
@@ -17,6 +17,6 @@ cd /workspaces/OI.AI.MLEng.TakeHome/docker
 
 # Run docker compose up
 echo "Running docker compose to raise the infrastructure..."
-docker compose up -d --build
+sudo docker compose up -d --build
 
 echo "Infrastructure started successfully!"

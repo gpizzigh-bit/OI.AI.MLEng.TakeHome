@@ -1,0 +1,27 @@
+# k8s-manifests/jaeger-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: oi-ai-mleng-takehome
+  labels:
+    app: jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+        - name: jaeger
+          # This uses a public image, so no change is needed
+          image: jaegertracing/all-in-one:latest
+          ports:
+            - containerPort: 16686
+              name: ui
+            - containerPort: 4317 # The docker-compose maps 4318->4317, 4317 is the correct container port
+              name: otlp-grpc

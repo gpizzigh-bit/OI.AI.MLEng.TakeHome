@@ -35,13 +35,30 @@ configure_logging(log_folder="logs", log_file_name="main.log")
 logger = structlog.get_logger()
 getattr(logger, LOG_LEVEL, logger.info)("Logger initialized", log_level=LOG_LEVEL)
 
-OTEL_SERVICE_URL = os.getenv("OTEL_SERVICE_URL", "otel-collector")
-OTEL_SERVICE_PORT = os.getenv("OTEL_SERVICE_PORT", "4317")
+OTEL_SERVICE_URL = str(os.getenv("OTEL_SERVICE_URL", "otel-collector"))
+OTEL_SERVICE_PORT = int(os.getenv("OTEL_SERVICE_PORT", "4317"))
 # Set up the OpenTelemetry exporter endpoint
 OTEL_ENDPOINT = f"http://{OTEL_SERVICE_URL}:{OTEL_SERVICE_PORT}"
 
+API_SERVICE_HOST = str(os.getenv("API_SERVICE_HOST", "0.0.0.0"))
+API_SERVICE_PORT = int(os.getenv("API_SERVICE_PORT", "29000"))
+API_AUTO_RELOAD = bool(os.getenv("API_AUTO_RELOAD", "true").lower() == "true")
+
+
 # Create the logger
 logger = structlog.get_logger()
+
+# log the environment variables
+logger.info(
+    "Environment Variables",
+    otel_service_url=OTEL_SERVICE_URL,
+    otel_service_port=OTEL_SERVICE_PORT,
+    api_service_host=API_SERVICE_HOST,
+    api_service_port=API_SERVICE_PORT,
+    api_auto_reload=API_AUTO_RELOAD,
+    log_level=LOG_LEVEL,
+)
+# Initialize Prometheus metrics
 
 
 @asynccontextmanager
@@ -138,6 +155,7 @@ async def readiness_check():
     Readiness check endpoint to verify the application is ready to serve traffic.
     Checks if all models are loaded and ready.
     """
+    logger.info("Readiness check initiated", status=ModelManager.is_ready())
     if ModelManager.is_ready():
         return {"status": "ready"}
     return Response(content="Not Ready", status_code=503)
@@ -154,8 +172,8 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0",
-        port=29000,
-        reload=True,
+        host=API_SERVICE_HOST,
+        port=API_SERVICE_PORT,
+        reload=API_AUTO_RELOAD,  # Enable auto-reload if set in environment keep it False in production
         reload_dirs=["app"],
     )

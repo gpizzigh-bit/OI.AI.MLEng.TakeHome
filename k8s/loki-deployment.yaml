@@ -1,0 +1,26 @@
+# k8s-manifests/loki-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+  namespace: oi-ai-mleng-takehome
+  labels:
+    app: loki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels:
+        app: loki
+    spec:
+      containers:
+        - name: loki
+          # IMPORTANT: Replace with your actual image
+          image: prod-loki:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3100
+              name: web

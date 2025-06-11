@@ -124,6 +124,12 @@ services:
       - LOG_FILE_NAME=marine_classifier.log
       - TRITON_SERVER_NAME=triton_cpu
       - TRITON_SERVER_PORT=8000
+      - FLUENT_BIT_HOST=fluent-bit
+      - FLUENT_BIT_PORT=24224
+      - FLUENT_BIT_TIMEOUT=1
+      - API_SERVICE_HOST=0.0.0.0
+      - API_SERVICE_PORT=29000
+      - API_AUTO_RELOAD=false
     networks:
       - skynet
     ports:

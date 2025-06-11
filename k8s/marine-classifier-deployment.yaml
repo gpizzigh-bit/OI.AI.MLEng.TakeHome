@@ -1,0 +1,82 @@
+# k8s-manifests/marine-classifier-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marine-classifier-api
+  namespace: oi-ai-mleng-takehome
+  labels:
+    app: marine-classifier-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marine-classifier-api
+  template:
+    metadata:
+      labels:
+        app: marine-classifier-api
+    spec:
+      containers:
+        - name: marine-classifier-api
+          # IMPORTANT: Replace with your actual image
+          image: prod-marine:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 29000
+              name: api
+          livenessProbe:
+              httpGet:
+                path: /healthz # Your liveness endpoint
+                port: 29000      # The port your app listens on
+              initialDelaySeconds: 5 # Give the app a few seconds to start
+              periodSeconds: 10      # Check every 10 seconds
+              timeoutSeconds: 3      # Timeout after 3 seconds
+              failureThreshold: 3    # Restart after 3 consecutive failures
+          readinessProbe:
+              httpGet:
+                path: /readiness # Your readiness endpoint
+                port: 29000        # The port your app listens on
+              initialDelaySeconds: 15 # Give the app more time to start AND connect to Triton/load models
+              periodSeconds: 10       # Check every 10 seconds
+              timeoutSeconds: 5       # Consider failure if no response after 5 seconds
+              failureThreshold: 3     # Mark as NotReady after 3 consecutive failures
+          env:
+            - name: PYTHONPATH
+              value: "/app"
+            - name: CUDA_VISIBLE_DEVICES
+              value: ""
+            - name: TF_CPP_MIN_LOG_LEVEL
+              value: "3"
+            - name: TF_ENABLE_ONEDNN_OPTS
+              value: "0"
+            - name: TF_FORCE_GPU_ALLOW_GROWTH
+              value: "false"
+            - name: THREADPOOL_SIZE
+              value: "8"
+            - name: LOG_FOLDER
+              value: "logs"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: LOG_FILE_NAME
+              value: "marine_classifier.log"
+            # Use Kubernetes service names for communication
+            - name: OTEL_SERVICE_URL
+              value: "otel-collector-service" # Service name
+            - name: TRITON_SERVER_NAME
+              value: "triton-service" # Service name
+            - name: OTEL_SERVICE_PORT
+              value: "4317"
+            - name: TRITON_SERVER_PORT
+              value: "8000"
+            - name: FLUENT_BIT_HOST
+              value: "fluent-bit-service" # Service name
+            - name: FLUENT_BIT_PORT
+              value: "24224"
+            - name: FLUENT_BIT_TIMEOUT
+              value: "1"
+            - name: API_SERVICE_HOST
+              value: "0.0.0.0"
+            - name: API_SERVICE_PORT
+              value: "29000"
+            - name: API_AUTO_RELOAD
+              value: "false"

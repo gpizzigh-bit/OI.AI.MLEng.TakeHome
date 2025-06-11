@@ -1,0 +1,13 @@
+name: OI.AI.MLENG.TAKEHOME
+
+services:
+  maestro:
+    build:
+      context: ..
+      dockerfile: docker/demo-maestro.Dockerfile
+    container_name: maestro
+    ports:
+      - "8089:8089"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # command: bash -c "cd /workspaces/OI.AI.MLEng.TakeHome && bash scripts/demo.sh"

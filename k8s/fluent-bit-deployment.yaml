@@ -1,0 +1,28 @@
+# k8s-manifests/fluent-bit-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluent-bit
+  namespace: oi-ai-mleng-takehome
+  labels:
+    app: fluent-bit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      containers:
+        - name: fluent-bit
+          # IMPORTANT: Replace with your actual image
+          image: prod-fluent-bit:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 24224
+              name: forward-tcp
+            - containerPort: 2020
+              name: http

@@ -1,0 +1,145 @@
+# k8s-manifests/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: triton-service
+  namespace: oi-ai-mleng-takehome
+spec:
+  selector:
+    app: triton
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+    - name: grpc
+      protocol: TCP
+      port: 8001
+      targetPort: 8001
+    - name: metrics
+      protocol: TCP
+      port: 8002
+      targetPort: 8002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: oi-ai-mleng-takehome
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - name: web
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+      # Use NodePort to expose it externally for easy access
+      nodePort: 30090
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+  namespace: oi-ai-mleng-takehome
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: web
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 30000
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki-service
+  namespace: oi-ai-mleng-takehome
+spec:
+  selector:
+    app: loki
+  ports:
+    - name: web
+      protocol: TCP
+      port: 3100
+      targetPort: 3100
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluent-bit-service
+  namespace: oi-ai-mleng-takehome
+spec:
+  selector:
+    app: fluent-bit
+  ports:
+    - name: forward-tcp
+      protocol: TCP
+      port: 24224
+      targetPort: 24224
+    - name: http
+      protocol: TCP
+      port: 2020
+      targetPort: 2020
+    - name: metrics
+      protocol: TCP
+      port: 2021
+      targetPort: 2021
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-service
+  namespace: oi-ai-mleng-takehome
+spec:
+  selector:
+    app: jaeger
+  ports:
+    - name: ui
+      protocol: TCP
+      port: 16686
+      targetPort: 16686
+      nodePort: 30686
+    - name: otlp-grpc
+      protocol: TCP
+      port: 4317
+      targetPort: 4317
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector-service
+  namespace: oi-ai-mleng-takehome
+spec:
+  selector:
+    app: otel-collector
+  ports:
+    - name: otlp
+      protocol: TCP
+      port: 4317
+      targetPort: 4317
+    - name: prom-export
+      protocol: TCP
+      port: 9091 # Exposing on a different port than the target
+      targetPort: 9090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marine-classifier-api-service
+  namespace: oi-ai-mleng-takehome
+spec:
+  selector:
+    app: marine-classifier-api
+  ports:
+    - name: api
+      protocol: TCP
+      port: 29000
+      targetPort: 29000
+      nodePort: 30900
+  type: NodePort

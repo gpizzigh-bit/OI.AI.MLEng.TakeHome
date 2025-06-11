@@ -1,0 +1,54 @@
+# k8s-manifests/triton-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triton
+  namespace: oi-ai-mleng-takehome
+  labels:
+    app: triton
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: triton
+  template:
+    metadata:
+      labels:
+        app: triton
+    spec:
+      containers:
+        - name: triton
+          # IMPORTANT: Replace this with the actual image you built and pushed to a registry
+          image: prod-triton:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - "tritonserver"
+            - "--model-repository=/models"
+            - "--log-verbose=1"
+            - "--model-control-mode=poll"
+            - "--backend-config=onnxruntime,session_thread_pool_size=4"
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 8001
+              name: grpc
+            - containerPort: 8002
+              name: metrics
+          env:
+            - name: OMP_NUM_THREADS
+              value: "4"
+            - name: OPENBLAS_NUM_THREADS
+              value: "4"
+          resources:
+            limits:
+              memory: "6Gi"
+            requests:
+              memory: "2Gi"
+          readinessProbe:
+            httpGet:
+              path: /v2/health/ready
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5

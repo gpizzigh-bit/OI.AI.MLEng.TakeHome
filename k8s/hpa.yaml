@@ -1,0 +1,66 @@
+# k8s-manifests/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: triton-hpa
+  namespace: oi-ai-mleng-takehome
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: triton
+  minReplicas: 1
+  maxReplicas: 2 # for local testing, keep it low
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70 # Target 70% CPU utilization
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: marine-classifier-api-hpa
+  namespace: oi-ai-mleng-takehome
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: marine-classifier-api
+  minReplicas: 1
+  maxReplicas: 2 # for local testing, keep it low
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: otel-collector-hpa
+  namespace: oi-ai-mleng-takehome # Or your dedicated monitoring namespace
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: otel-collector # Name of your OpenTelemetry Collector Deployment
+  minReplicas: 1
+  maxReplicas: 2 # for local testing, keep it low
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70 # Target 70% CPU utilization for the Collector
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70

@@ -1,0 +1,32 @@
+# k8s-manifests/otel-collector-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: oi-ai-mleng-takehome
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          # IMPORTANT: Replace with your actual image
+          image: prod-otel:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/otelcol-contrib"
+            - "--config=/etc/otel-collector-config.yaml"
+          ports:
+            - containerPort: 4317
+              name: otlp
+            - containerPort: 9090
+              name: prom-export
+          # Note: In a real deployment, you would mount the config file via a ConfigMap
