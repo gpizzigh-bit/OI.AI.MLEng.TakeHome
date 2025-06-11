@@ -1,4 +1,3 @@
-# k8s-manifests/loki-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,9 +17,18 @@ spec:
     spec:
       containers:
         - name: loki
-          # IMPORTANT: Replace with your actual image
           image: prod-loki:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3100
               name: web
+          args:
+            - "-config.file=/etc/loki/loki-config.yaml"
+          volumeMounts:
+            - name: loki-config-volume
+              mountPath: /etc/loki/loki-config.yaml
+              subPath: loki-config.yaml
+      volumes:
+        - name: loki-config-volume
+          configMap:
+            name: loki-config

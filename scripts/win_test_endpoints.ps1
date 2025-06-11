@@ -2,10 +2,16 @@
 $filePath = "../tests/images/whale.jpg"
 
 # List of endpoints
+# $endpoints = @(
+#     "http://localhost:29000/api/v1/predict",
+#     "http://localhost:29000/api/v1/smart_predict",
+#     "http://localhost:29000/api/v1/triton_predict"
+# )
+
 $endpoints = @(
-    "http://localhost:29000/api/v1/predict",
-    "http://localhost:29000/api/v1/smart_predict",
-    "http://localhost:29000/api/v1/triton_predict"
+    "http://localhost:30900/api/v1/predict",
+    "http://localhost:30900/api/v1/smart_predict",
+    "http://localhost:30900/api/v1/triton_predict"
 )
 
 # Loop through each endpoint and send the file

@@ -1,4 +1,3 @@
-# k8s-manifests/fluent-bit-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,7 +17,6 @@ spec:
     spec:
       containers:
         - name: fluent-bit
-          # IMPORTANT: Replace with your actual image
           image: prod-fluent-bit:latest
           imagePullPolicy: IfNotPresent
           ports:
@@ -26,3 +24,11 @@ spec:
               name: forward-tcp
             - containerPort: 2020
               name: http
+          volumeMounts:
+            - name: fluent-bit-config-volume
+              mountPath: /fluent-bit/etc/fluent-bit.conf
+              subPath: fluent-bit.conf
+      volumes:
+        - name: fluent-bit-config-volume
+          configMap:
+            name: fluent-bit-config

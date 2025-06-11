@@ -1,4 +1,3 @@
-# k8s-manifests/otel-collector-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,15 +17,21 @@ spec:
     spec:
       containers:
         - name: otel-collector
-          # IMPORTANT: Replace with your actual image
           image: prod-otel:latest
           imagePullPolicy: IfNotPresent
           command:
             - "/otelcol-contrib"
-            - "--config=/etc/otel-collector-config.yaml"
+            - "--config=/etc/otel/otel-collector-config.yaml"
           ports:
             - containerPort: 4317
               name: otlp
             - containerPort: 9090
               name: prom-export
-          # Note: In a real deployment, you would mount the config file via a ConfigMap
+          volumeMounts:
+            - name: otel-collector-config-volume
+              mountPath: /etc/otel/otel-collector-config.yaml
+              subPath: otel-collector-config.yaml
+      volumes:
+        - name: otel-collector-config-volume
+          configMap:
+            name: otel-collector-config

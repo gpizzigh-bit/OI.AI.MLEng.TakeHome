@@ -4,7 +4,7 @@
 # and creates them if they are missing.
 
 # The base directory for the Kubernetes manifests.
-DIR="../k8s"
+DIR="k8s"
 
 # An array of required manifest files.
 FILES=(

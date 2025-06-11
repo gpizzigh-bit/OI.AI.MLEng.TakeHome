@@ -60,7 +60,7 @@ for df_basename in "${dockerfiles_to_build[@]}"; do
         echo "  With build context: ${PROJECT_ROOT}"
 
         # Build the Docker image
-        docker build \
+        sudo docker build \
             -f "${DOCKERFILE_PATH}" \
             -t "${FULL_IMAGE_TAG}" \
             "${PROJECT_ROOT}" # Use project root as the build context

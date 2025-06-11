@@ -26,8 +26,7 @@ RUN groupadd docker \
 RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/nopasswd \
     && chmod 0440 /etc/sudoers.d/nopasswd
 
-# Install kubectl using the latest recommended APT method
-# Kubernetes 1.33 is currently the latest stable (as of your provided text's release dates)
+# Install kubectl using the latest recommended APT method2
 RUN mkdir -p -m 755 /etc/apt/keyrings \
     && curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg \
     && echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list \

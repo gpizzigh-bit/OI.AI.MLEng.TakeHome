@@ -18,10 +18,31 @@ classification result.
  * Added a logging pipeline to capture and store logs in a structured format.
  * Use poetry for dependency management.
  * Implemented a NVIDIA Triton Inference Server for faster model inference.
+ * some other features i can remember when explaining the code.
 
 
-⚠️ **Partial Kubernetes Deployment:**
-Due to time constraints, the Kubernetes deployment is partially implemented and untested. However, the project structure (`k8s` directory) and deployment manifests are prepared for future deployment.
+## Notes on Kubernetes Deployment
+
+Although full Kubernetes deployment is not required for this challenge, the repository includes deployment manifests in the `k8s` directory.
+⚠️ Note: Kubernetes is currently up and running, the only issue is resource limition, and because is not in a cloud environment, load balancing is not fully implemented. The API is running on a single node with limited resources, but the manifests are prepared for future deployment.
+
+Also note that the Kubernetes deployment is **not working** on the fully automated in the scripts, but you can still deploy it manually using the guide provided manually using the dev container.
+
+**IMPORTANT**: to be able to run kubectl inside the dev container, you need to mount the .kube/config file from your host machine to the container. You can do this by adding the following line to your `.devcontainer/devcontainer.json` file:
+
+```json
+"mounts": [
+    "source={[YOUR DIRECTORY PATH HERE]}/.kube/config,target=/root/.kube/config,type=bind"
+]
+```
+for example:
+
+```json
+"mounts": [
+    "source=/home/gpizzigh/.kube/config,target=/root/.kube/config,type=bind"
+]
+```
+This will allow you to run `kubectl` commands inside the dev container and manage your Kubernetes cluster.
 
 ---
 
@@ -166,6 +187,65 @@ You have two options:
 ```bash
 bash scripts/stop_and_clean.sh
 ```
+---
+
+### ⚙️ Build and Deploy the Kubernetes Stack
+
+
+#### 1️⃣ Build Docker Images
+
+Inside your development container:
+
+```bash
+bash scripts/build.sh
+```
+
+✅ This will build all required Docker images and tag them as `prod-*`.
+
+#### 2️⃣ Deploy Kubernetes Manifests
+
+Apply the Kubernetes manifests in order:
+
+```bash
+bash scripts/rise.sh
+```
+
+✅ This script:
+
+* Creates the `oi-ai-mleng-takehome` namespace.
+* Applies PersistentVolumeClaims, ConfigMaps, core deployments, Triton, Marine Classifier, services, and HPAs.
+* Waits for **Triton** to become ready before proceeding.
+
+#### 3️⃣ Check Status
+
+Verify everything is running:
+
+```bash
+kubectl get pods -n oi-ai-mleng-takehome
+kubectl get svc -n oi-ai-mleng-takehome
+kubectl get hpa -n oi-ai-mleng-takehome
+```
+
+✅ All pods should be in `Running` state.
+
+### 3️⃣ Access the Kubernetes UIs
+
+| Tool                      | URL                                              | Notes                                                                                                             |
+| ------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| **Marine Classifier API** | [http://localhost:30900](http://localhost:30900) | API documentation available via ReDoc.                                                                            |
+| **Prometheus**            | [http://localhost:9090](http://localhost:30090)   | Monitoring and metrics dashboard.                                                                                 |
+| **Grafana**               | [http://localhost:3000](http://localhost:3000)   | Default credentials: `USER: ocean_infinty` / `PASS: admin`.<br/>Preconfigured dashboard: “Marine Classifier API”. |
+| **Jaeger**                | [http://localhost:16686](http://localhost:16686) | Distributed tracing dashboard.                                                                                    |
+
+#### 4️⃣ Test API Endpoints
+
+* Run Locust load tests:
+
+  ```bash
+  bash scripts/test_locust_k8s.sh
+  ```
+
+  Access the Locust UI at [http://localhost:8089](http://localhost:8089).
 
 #### Option 2 – **Automated Setup** (Recommended for Windows using WSL2)
 
@@ -206,13 +286,6 @@ Attention: For now the Kubernetes deployment is not wet implemented in the autom
 * If running on Windows, verify that WSL2 is properly configured.
 * If issues persist, restart Docker Desktop and re-run the script.
 * To be able to run bash scripts in Windows, you may need to install the new powershell >7.5.1.
-
----
-
-## Kubernetes Deployment (Partial)
-
-Although full Kubernetes deployment is not required for this challenge, the repository includes deployment manifests in the `k8s` directory for future use.
-⚠️ Note: These configurations are not fully tested due to time constraints but should require only minor adjustments for a complete deployment.
 
 ---
 

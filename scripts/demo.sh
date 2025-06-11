@@ -59,16 +59,35 @@ while true; do
       ;;
     2)
       echo "☸️ You selected Kubernetes."
-      echo "⚠️ Note: Kubernetes deployment is partially implemented and untested!"
+      echo "⚠️ Note: Kubernetes deployment is partially implemented and not thoroughly tested!"
 
-      # Navigate to the k8s directory
-      cd /workspaces/OI.AI.MLEng.TakeHome/k8s
+      echo "🔧 Building the Kubernetes images..."
+      bash scripts/build.sh
 
-      # Apply Kubernetes manifests
-      kubectl apply -f .
-
+      echo "🚀 Starting Kubernetes resources (rise.sh)..."
+      bash scripts/rise.sh
       echo "✅ Kubernetes manifests applied."
-      echo "ℹ️ Use 'kubectl get pods' to check status."
+
+      echo "Checking Kubernetes resources..."
+      kubectl get pods -n oi-ai-mleng-takehome
+
+      echo "Opening locust webserver fro kubernetes testing"
+
+      bash scripts/test_locust_k8s.sh
+
+      # Prompt to clean up resources
+      read -rp "🧹 Do you want to stop services and clean up resources? (y/n): " CLEANUP_CHOICE
+      if [[ "$CLEANUP_CHOICE" == "y" || "$CLEANUP_CHOICE" == "Y" ]]; then
+        bash scripts/sweetdreams.sh
+        echo "✅ Kubernetes resources cleaned up."
+      else
+        echo "⚠️ Skipping cleanup. Resources will remain running."
+      fi
+
+      # terminate the maestro container
+      echo "Terminating the maestro container..."
+      sudo docker compose -f docker/maestro-compose.yml down
+      echo "✅ Maestro container terminated."
       break  # Exit the loop on successful selection
       ;;
     *)

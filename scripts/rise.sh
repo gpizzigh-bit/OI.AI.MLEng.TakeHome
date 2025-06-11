@@ -24,7 +24,7 @@ trap 'handle_error' ERR
 echo "🚀 Starting Kubernetes manifest deployment..."
 
 # Define the directory where your k8s manifests are located
-MANIFESTS_DIR="../k8s"
+MANIFESTS_DIR="k8s"
 NAMESPACE_FILE="${MANIFESTS_DIR}/namespace.yaml" # Define path to namespace file
 
 # Check if the manifests directory exists
@@ -84,6 +84,16 @@ for pvc_manifest in "${MANIFESTS_DIR}"/*-pvc.yaml; do
     if [ -f "$pvc_manifest" ]; then
         echo "Applying: $pvc_manifest"
         kubectl apply -f "$pvc_manifest"
+    fi
+done
+echo ""
+
+# 2.5. Apply ConfigMaps
+echo "Applying ConfigMaps..."
+for configmap_manifest in "${MANIFESTS_DIR}"/*-configmap.yaml; do
+    if [ -f "$configmap_manifest" ]; then
+        echo "Applying: $configmap_manifest"
+        kubectl apply -f "$configmap_manifest"
     fi
 done
 echo ""

@@ -10,4 +10,4 @@ services:
       - "8089:8089"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    # command: bash -c "cd /workspaces/OI.AI.MLEng.TakeHome && bash scripts/demo.sh"
+      - /c/Users/Gabriel/.kube:/home/vscode/.kube:ro

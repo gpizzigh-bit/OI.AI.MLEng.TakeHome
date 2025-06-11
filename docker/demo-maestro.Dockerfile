@@ -18,6 +18,13 @@ RUN groupadd --gid $USER_GID $USERNAME \
       lsb-release \
       sudo
 
+# --- Install yq (Go-based) ---
+# Download the latest stable yq binary for Linux AMD64
+# You can check for the latest version at https://github.com/mikefarah/yq/releases
+ENV YQ_VERSION="4.45.4"
+RUN curl -sSL "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64" -o /usr/local/bin/yq \
+    && chmod +x /usr/local/bin/yq
+
 # Add Docker's official GPG key
 RUN install -m 0755 -d /etc/apt/keyrings \
  && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
@@ -40,6 +47,14 @@ RUN apt-get update \
       docker-compose-plugin \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
+
+# Install kubectl using the latest recommended APT method2
+RUN mkdir -p -m 755 /etc/apt/keyrings \
+    && curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list \
+    && apt-get update \
+    && apt-get install -y kubectl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Add the user to the docker group
 RUN getent group docker || groupadd docker \
